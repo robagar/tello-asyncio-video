@@ -2,6 +2,7 @@ import asyncio
 import tornado.web
 from io import BytesIO
 from PIL import Image
+from time import time
 
 from tello_asyncio import Tello
 
@@ -40,6 +41,7 @@ def run_tello_video_app(fly, drone=None, on_frame_decoded=None, wait_for_wifi=Tr
 
         # begin video stream
         await drone.start_video()
+        t0 = time()
 
         decoder = H264DecoderAsync()
 
@@ -63,6 +65,9 @@ def run_tello_video_app(fly, drone=None, on_frame_decoded=None, wait_for_wifi=Tr
 
                 while True:
                     frame = await decoder.decoded_frame
+                    print(f'[mjpegstream] got frame {frame.number}...') 
+
+                    frame_t0 = time()
                     content = self.frame_to_jpeg_data(frame)
                     content_length = len(content)
 
@@ -70,7 +75,13 @@ def run_tello_video_app(fly, drone=None, on_frame_decoded=None, wait_for_wifi=Tr
                     self.write('Content-type: image/jpeg\r\n')
                     self.write(f'Content-length: {content_length}\r\n\r\n')
                     self.write(content)
-                    self.flush()
+                    await self.flush()
+                    t = time()
+                    frame_time = t - t0
+                    dt = t - frame_t0
+                    fps = 1.0/dt
+                    print(f'[mjpegstream] FRAME {frame.number} at t={frame_time:0.4f} took {dt:0.4f}s ({fps:0.1f} fps)')
+ 
 
             def frame_to_jpeg_data(self, frame):
                 image = Image.frombytes('RGB', (frame.width, frame.height), frame.data)

@@ -1,5 +1,6 @@
 import asyncio
 from inspect import iscoroutinefunction
+from time import time
 
 try:
     from h264decoder import H264Decoder
@@ -36,10 +37,13 @@ class H264DecoderAsync:
             await self._frame_available.acquire()
             # print(f'[H264DecoderAsync] frame {self._frame_number}')
             try:
+                # t0 = time()
                 (frame_info, num_bytes) = self._decoder.decode_frame(frame)
+                # dt = time() - t0
                 (frame_data, width, height, row_size) = frame_info
                 if width and height:
                     self._frame_number += 1
+                    # print(f'[H264DecoderAsync] frame {self._frame_number} {dt:0.4f}s')
                     self._decoded_frame = DecodedFrame(self._frame_number, width, height, frame_data)
                     if on_frame_decoded:
                         if iscoroutinefunction(on_frame_decoded):
