@@ -51,11 +51,12 @@ def run_tello_video_app(fly, drone=None, on_frame_decoded=None, wait_for_wifi=Tr
             often relies on previous frame data, so all frames must be decoded.
             '''
             print('[watch video] START')
-            await decoder.decode_frames(drone.video_stream, on_frame_decoded)
+            await decoder.decode_frames(drone.video_chunk_stream, on_frame_decoded)
             print('[watch video] END')
 
         class MJPEGStreamHandler(tornado.web.RequestHandler):
             BOUNDARY = '--jpgboundary'
+            JPEG_QUALITY = 75
 
             async def get(self):
                 self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0')
@@ -64,18 +65,32 @@ def run_tello_video_app(fly, drone=None, on_frame_decoded=None, wait_for_wifi=Tr
                 self.set_header('Connection', 'close')
 
                 while True:
+                    print(f'[mjpegstream] waiting for frame...')
                     frame = await decoder.decoded_frame
-                    print(f'[mjpegstream] got frame {frame.number}...') 
+                    print(f'[mjpegstream] got frame {frame.number}') 
 
                     frame_t0 = time()
                     content = self.frame_to_jpeg_data(frame)
                     content_length = len(content)
 
-                    self.write(self.BOUNDARY)
+                    dt = time() - frame_t0
+                    print(f'[mjpegstream] frame {frame.number}: encoded jpeg after {dt:0.4f}s') 
+
+                    self.write('X-Timestamp: {0}\n'.format(time()))
                     self.write('Content-type: image/jpeg\r\n')
                     self.write(f'Content-length: {content_length}\r\n\r\n')
                     self.write(content)
+                    self.write(self.BOUNDARY)
+                    self.write('\n')
+
+                    dt = time() - frame_t0
+                    print(f'[mjpegstream] frame {frame.number}: wrote output after {dt:0.4f}s') 
+                    
                     await self.flush()
+
+                    dt = time() - frame_t0
+                    print(f'[mjpegstream] frame {frame.number}: flushed after {dt:0.4f}s') 
+                    
                     t = time()
                     frame_time = t - t0
                     dt = t - frame_t0
@@ -86,7 +101,7 @@ def run_tello_video_app(fly, drone=None, on_frame_decoded=None, wait_for_wifi=Tr
             def frame_to_jpeg_data(self, frame):
                 image = Image.frombytes('RGB', (frame.width, frame.height), frame.data)
                 buf = BytesIO()
-                image.save(buf, 'jpeg')
+                image.save(buf, 'jpeg', quality=self.JPEG_QUALITY)
                 return buf.getvalue()                    
 
         # start http server
