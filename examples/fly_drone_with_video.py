@@ -14,15 +14,15 @@ async def fly(drone):
     t0 = time()
     await drone.takeoff()
 
-    for i in range(10):
-        r0 = time()
-        b = await drone.query_battery()
-        t = time() - t0
-        print(f'[{i}] at t={t:0.4f}s battery: {b}%')
-        dt = time() - r0
-        await asyncio.sleep(1-dt)
-    # await drone.turn_clockwise(360)
-    # await drone.flip_back()
+    # for i in range(30):
+    #     r0 = time()
+    #     b = await drone.query_battery()
+    #     t = time() - t0
+    #     print(f'[{i}] at t={t:0.4f}s battery: {b}%')
+    #     dt = time() - r0
+    #     await asyncio.sleep(1-dt)
+    await drone.turn_clockwise(360)
+    await drone.flip_back()
     await drone.land()
 
 run_tello_video_app(fly, on_frame_decoded=on_frame_decoded)

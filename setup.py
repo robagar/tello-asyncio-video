@@ -21,5 +21,4 @@ setup(name='tello_asyncio_video',
       install_requires=[
         'tello-asyncio >= 2.0.0',
         'numpy >= 1.13.3',
-        'tornado >= 6.1'
       ])

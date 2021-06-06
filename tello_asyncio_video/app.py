@@ -1,7 +1,6 @@
 import asyncio
 from time import time
-from queue import Queue
-from threading import Thread
+from threading import Thread, Condition
 
 from tello_asyncio import Tello
 
@@ -10,13 +9,18 @@ from .server import run_server
 
 DEFAULT_SERVER_PORT=22222
 
+frame = None
+
 def run_tello_video_app(fly, on_frame_decoded, drone=None, wait_for_wifi=True, server_port=DEFAULT_SERVER_PORT):
 
-    frame_queue = Queue()
+    frame_available = Condition()
 
-    def _on_frame_decoded(frame):
-        frame_queue.put(frame)
-        on_frame_decoded(frame)
+    def _on_frame_decoded(f):
+        global frame
+        with frame_available:
+            frame = f
+            frame_available.notify()
+            on_frame_decoded(frame)
 
     def fly_drone(fly, on_frame_decoded, drone, wait_for_wifi):    
         loop = asyncio.new_event_loop()
@@ -72,4 +76,4 @@ def run_tello_video_app(fly, on_frame_decoded, drone=None, wait_for_wifi=True, s
     fly_drone_thread = Thread(target=fly_drone, daemon=True, args=(fly, on_frame_decoded, drone, wait_for_wifi))
     fly_drone_thread.start()
 
-    run_server(frame_queue, server_port)
+    run_server(frame_available, lambda: frame, server_port)
