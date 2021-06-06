@@ -33,28 +33,27 @@ class H264DecoderAsync:
         :type on_frame_decoded: Awaitable or plain function taking :class:`jetson_tello.types.DecodedFrame` 
         '''
         async for frame in video_stream:
-            # print(f'[H264DecoderAsync] frame, acquiring lock...')
-            await self._frame_available.acquire()
-            # print(f'[H264DecoderAsync] frame {self._frame_number}')
-            try:
-                # t0 = time()
-                (frame_info, num_bytes) = self._decoder.decode_frame(frame)
-                # dt = time() - t0
-                (frame_data, width, height, row_size) = frame_info
-                if width and height:
-                    self._frame_number += 1
-                    # print(f'[H264DecoderAsync] frame {self._frame_number} {dt:0.4f}s')
-                    self._decoded_frame = DecodedFrame(self._frame_number, width, height, frame_data)
-                    if on_frame_decoded:
-                        if iscoroutinefunction(on_frame_decoded):
-                            await on_frame_decoded(self._decoded_frame)
-                        else:
-                            on_frame_decoded(self._decoded_frame)
-                    self._frame_available.notify()
-            except Exception as e:
-                # print(f'[H264DecoderAsync] error: {e}')
-                self._decoded_frame = None
-            self._frame_available.release()
+            async with self._frame_available:
+                print(f'[H264DecoderAsync] frame, {len(frame)} bytes')
+                try:
+                    # t0 = time()
+                    (frame_info, num_bytes) = self._decoder.decode_frame(frame)
+                    print(f'decoded {num_bytes} bytes')
+                    # dt = time() - t0
+                    (frame_data, width, height, row_size) = frame_info
+                    if width and height:
+                        self._frame_number += 1
+                        # print(f'[H264DecoderAsync] frame {self._frame_number} {dt:0.4f}s')
+                        self._decoded_frame = DecodedFrame(self._frame_number, width, height, frame_data)
+                        if on_frame_decoded:
+                            if iscoroutinefunction(on_frame_decoded):
+                                await on_frame_decoded(self._decoded_frame)
+                            else:
+                                on_frame_decoded(self._decoded_frame)
+                        self._frame_available.notify()
+                except Exception as e:
+                    # print(f'[H264DecoderAsync] error: {e}')
+                    self._decoded_frame = None
 
     @property
     async def decoded_frame(self):
@@ -62,10 +61,14 @@ class H264DecoderAsync:
         The most recently decoded frame.
         :rtype: :class:`jetson_tello.types.DecodedFrame`
         '''
-        # print(f'[H264DecoderAsync] decoded frame, acquiring lock...')
-        await self._frame_available.acquire()
-        # print(f'[H264DecoderAsync] decoded frame, waiting...')
-        await self._frame_available.wait()
-        f = self._decoded_frame
-        self._frame_available.release()
-        return f
+        # # print(f'[H264DecoderAsync] decoded frame, acquiring lock...')
+        # await self._frame_available.acquire()
+        # # print(f'[H264DecoderAsync] decoded frame, waiting...')
+        # await self._frame_available.wait()
+        # f = self._decoded_frame
+        # self._frame_available.release()
+        # return f
+
+        async with self._frame_available:
+            await self._frame_available.wait()
+            return self._decoded_frame
