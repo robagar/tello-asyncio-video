@@ -4,15 +4,17 @@ from threading import Thread, Condition
 
 from tello_asyncio import Tello
 
-from .video import H264DecoderAsync
+from ..video import H264DecoderAsync
 from .server import run_server
 
 DEFAULT_SERVER_PORT=22222
 
 frame = None
 
-def run_tello_video_app(fly, on_frame_decoded, drone=None, wait_for_wifi=True, server_port=DEFAULT_SERVER_PORT):
-
+def run_tello_video_app_with_mjpegstream(fly, on_frame_decoded, drone=None, wait_for_wifi=True, server_port=DEFAULT_SERVER_PORT):
+    '''
+    Not ready for use - basically works but with terrible lag
+    '''
     frame_available = Condition()
 
     def _on_frame_decoded(f):
