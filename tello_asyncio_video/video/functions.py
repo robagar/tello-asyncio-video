@@ -1,10 +1,4 @@
 try:
-    import jetson.utils
-except ImportError:
-    print('ImportError - failed to import jetson.utils')
-    print('Please visit https://github.com/dusty-nv/jetson-inference and follow the instructions to build and install')
-
-try:
     import h264decoder
 except ImportError:
     print('ImportError - failed to import h264decoder')
@@ -52,18 +46,6 @@ def decoded_frame_to_numpy_array(decoded_frame):
     return np.reshape(flat_array, (height, width, 3))
 
 
-def decoded_frame_to_cuda(decoded_frame):
-    '''
-    Loads frame data into CUDA memory.
-
-    :param decoded_frame:
-    :type decoded_frame: :class:`jetson_tello.types.DecodedFrame`
-    :rtype: :class:`cudaImage`
-    '''
-    numpy_array = decoded_frame_to_numpy_array(decoded_frame)
-    return jetson.utils.cudaFromNumpy(numpy_array)
-
-
 def h264_frame_to_numpy_array(h264_frame):
     '''
     Decodes raw h.264 frame data and copies it into a NumPy array ready for analysis.
@@ -76,19 +58,5 @@ def h264_frame_to_numpy_array(h264_frame):
     decoded_frame = decode_h264_frame(h264_frame)
     numpy_array = decoded_frame_to_numpy_array(decoded_frame)
     return decoded_frame, numpy_array
-
-
-def h264_frame_to_cuda(h264_frame):
-    '''
-    Decodes raw h.264 frame data and copies it into CUDA memory.
-
-    :param frame: The raw frame data
-    :type frame: bytes
-    :rtype: (:class:`jetson_tello.types.DecodedFrame`, :class:`cudaImage`)
-    :throws: :class:`jetson_tello.video.NoFrameData`
-    '''
-    decoded_frame, numpy_array = h264_frame_to_numpy_array(h264_frame)
-    cuda = jetson.utils.cudaFromNumpy(numpy_array)
-    return decoded_frame, cuda
 
 
