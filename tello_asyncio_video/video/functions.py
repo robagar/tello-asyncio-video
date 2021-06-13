@@ -5,6 +5,8 @@ except ImportError:
     print('h264decoder requires manual building and installation - please see https://github.com/robagar/h264decoder for installation instructions')
 
 import numpy as np
+from io import BytesIO
+from PIL import Image
 from .exceptions import NoFrameData
 from .types import DecodedFrame
 
@@ -60,3 +62,8 @@ def h264_frame_to_numpy_array(h264_frame):
     return decoded_frame, numpy_array
 
 
+def decoded_frame_to_jpeg_data(frame):
+    image = Image.frombytes('RGB', (frame.width, frame.height), frame.data)
+    buf = BytesIO()
+    image.save(buf, 'jpeg', quality=75)
+    return buf.getvalue()  

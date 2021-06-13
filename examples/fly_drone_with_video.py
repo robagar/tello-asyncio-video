@@ -7,8 +7,7 @@ from tello_asyncio_video import run_tello_video_app
 
 
 def on_frame_decoded(frame):
-    pass
-    # print(f'frame {frame.number} DECODED') 
+    print(f'frame {frame.number} DECODED') 
 
 async def fly(drone):
     t0 = time()
@@ -22,7 +21,7 @@ async def fly(drone):
     #     dt = time() - r0
     #     await asyncio.sleep(1-dt)
     await drone.turn_clockwise(360)
-    await drone.flip_back()
+    # await drone.flip_back()
     await drone.land()
 
 run_tello_video_app(fly, on_frame_decoded=on_frame_decoded)
