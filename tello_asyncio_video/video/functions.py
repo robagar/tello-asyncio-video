@@ -62,8 +62,8 @@ def h264_frame_to_numpy_array(h264_frame):
     return decoded_frame, numpy_array
 
 
-def decoded_frame_to_jpeg_data(frame):
-    image = Image.frombytes('RGB', (frame.width, frame.height), frame.data)
+def decoded_frame_to_jpeg_data(decoded_frame, quality=75):
+    image = Image.frombytes('RGB', (decoded_frame.width, decoded_frame.height), decoded_frame.data)
     buf = BytesIO()
-    image.save(buf, 'jpeg', quality=75)
+    image.save(buf, 'jpeg', quality=quality)
     return buf.getvalue()  

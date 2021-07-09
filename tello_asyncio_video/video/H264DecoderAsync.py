@@ -44,7 +44,7 @@ class H264DecoderAsync:
                             await on_frame_decoded(self._decoded_frame)
                         else:
                             on_frame_decoded(self._decoded_frame)
-                    self._frame_available.notify()
+                    self._frame_available.notify_all()
 
     @property
     async def decoded_frame(self):
